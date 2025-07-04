@@ -30,10 +30,6 @@ COPY --from=builder /app/main .
 # Create uploads directory
 RUN mkdir -p uploads
 
-# Copy static files if they exist
-COPY static ./static/ 2>/dev/null || true
-COPY *.html ./ 2>/dev/null || true
-
 EXPOSE 80 443
 
 CMD ["./main"]

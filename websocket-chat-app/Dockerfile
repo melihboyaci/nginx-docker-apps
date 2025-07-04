@@ -25,9 +25,6 @@ COPY --from=builder /app/main .
 
 RUN mkdir -p uploads
 
-COPY static ./static/ 2>/dev/null || true
-COPY *.html ./ 2>/dev/null || true
-
 EXPOSE 80 443
 
 CMD ["./main"]
