@@ -3,32 +3,31 @@ FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
-# Copy go mod files (handle missing go.sum)
-COPY go.mod ./
-COPY go.su[m] ./
+RUN apk add --no-cache git
 
-# Download dependencies
+COPY go.mod go.sum ./
+
+RUN go clean -modcache
 RUN go mod download
 
-# Copy source code
 COPY . .
 
-# Build the application
-RUN go build -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
 # Runtime stage
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add ca-certificates tzdata
 
-WORKDIR /root/
+WORKDIR /app
 
-# Copy the binary from builder stage
 COPY --from=builder /app/main .
-COPY --from=builder /app/index.html .
 
-EXPOSE 8080
-EXPOSE 80
-EXPOSE 443
+RUN mkdir -p uploads
+
+COPY static ./static/ 2>/dev/null || true
+COPY *.html ./ 2>/dev/null || true
+
+EXPOSE 80 443
 
 CMD ["./main"]
