@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: websocket-chat-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  chat-app:
+    build: .
+    image: websocket-chat-app:golang-v1.0
+    ports:
+      - "8080:80"    # HTTP redirect (host:container) - host 8080, container 80
+      - "443:443"    # HTTPS (host:container)
+    restart: unless-stopped
+    container_name: websocket-chat-app
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis:6379
+    volumes:
+      - ./ssl:/app/ssl:ro  # SSL sertifikalarını read-only olarak mount et
+
+volumes:
+  redis_data:

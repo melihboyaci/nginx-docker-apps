@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Question Chat</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #2c3e50;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            background: #ffffff;
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            background: #ffffff;
+        }
+
+        .app-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            background: #ffffff;
+        }
+
+        .questions {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
+            background: #fafbfc;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .question-card.answered {
+            border-left-color: #28a745;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .question-author {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .question-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-waiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-answered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .question-text {
+            color: #495057;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .answer-text {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            color: #495057;
+            margin-top: 12px;
+            border-left: 3px solid #28a745;
+        }
+
+        .question-input-container {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .question-form {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            color: #495057;
+            font-family: inherit;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .submit-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div id="loginModal" class="login-modal">
+        <div class="login-form">
+            <h2 class="login-title">Question Chat'e Katıl</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Kullanıcı Adı</label>
+                    <input type="text" id="usernameInput" class="form-input" placeholder="Kullanıcı adınızı girin" required>
+                </div>
+                <button type="submit" class="submit-button" style="width: 100%;">Katıl</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app" id="app" style="display: none;">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="app-title">Question Chat</div>
+                <div class="online-status">
+                    <span class="status-dot"></span>
+                    Soru & Cevap Platformu
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chat-header">
+                <h2>Sorular & Cevaplar</h2>
+                <p>Sorularınızı sorun, uzmanlardan cevap alın</p>
+            </div>
+            
+            <div class="questions" id="questions"></div>
+            
+            <div class="question-input-container">
+                <form class="question-form" id="questionForm">
+                    <div class="form-group">
+                        <label class="form-label">Kategori</label>
+                        <select id="categorySelect" class="form-input">
+                            <option value="genel">Genel</option>
+                            <option value="teknik">Teknik</option>
+                            <option value="egitim">Eğitim</option>
+                            <option value="kariyer">Kariyer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Sorunuz</label>
+                        <textarea id="questionInput" class="form-textarea" placeholder="Sorunuzu buraya yazın..." required></textarea>
+                    </div>
+                    <button type="submit" class="submit-button">Soruyu Gönder</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let username = '';
+
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const app = document.getElementById('app');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('usernameInput');
+        const questions = document.getElementById('questions');
+        const questionForm = document.getElementById('questionForm');
+        const questionInput = document.getElementById('questionInput');
+        const categorySelect = document.getElementById('categorySelect');
+
+        // Login
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            username = usernameInput.value.trim();
+            if (username) {
+                loginModal.style.display = 'none';
+                app.style.display = 'flex';
+                connectWebSocket();
+            }
+        });
+
+        // Question form
+        questionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const question = questionInput.value.trim();
+            const category = categorySelect.value;
+            
+            if (question && ws && ws.readyState === WebSocket.OPEN) {
+                const questionData = {
+                    username: username,
+                    question: question,
+                    category: category,
+                    status: 'waiting'
+                };
+                
+                ws.send(JSON.stringify(questionData));
+                questionInput.value = '';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Soru Gönderildi',
+                    text: 'Sorunuz uzmanlarımıza iletildi.',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+        });
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('WebSocket bağlantısı kuruldu');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    displayQuestion(data);
+                } catch (error) {
+                    console.error('Mesaj parse hatası:', error);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket bağlantısı kapandı');
+            };
+        }
+
+        function displayQuestion(data) {
+            const questionElement = document.createElement('div');
+            questionElement.className = `question-card ${data.status === 'answered' ? 'answered' : ''}`;
+
+            const timestamp = new Date(data.timestamp);
+            const timeString = timestamp.toLocaleString('tr-TR');
+
+            questionElement.innerHTML = `
+                <div class="question-header">
+                    <div>
+                        <span class="question-author">${data.username}</span>
+                        <span style="color: #6c757d; font-size: 12px; margin-left: 8px;">${timeString}</span>
+                    </div>
+                    <span class="question-status ${data.status === 'answered' ? 'status-answered' : 'status-waiting'}">
+                        ${data.status === 'answered' ? 'Yanıtlandı' : 'Bekliyor'}
+                    </span>
+                </div>
+                <div class="question-text">${escapeHtml(data.question)}</div>
+                <div style="color: #6c757d; font-size: 12px;">Kategori: ${data.category}</div>
+                ${data.answer ? `<div class="answer-text"><strong>Cevap:</strong> ${escapeHtml(data.answer)}</div>` : ''}
+            `;
+
+            questions.insertBefore(questionElement, questions.firstChild);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        usernameInput.focus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # Redis service (shared between both apps)
+  redis:
+    image: redis:7-alpine
+    container_name: shared-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    networks:
+      - chat_network
+
+  # Main Chat Application (melihboyaci.xyz)
+  websocket-chat-app:
+    build: ./websocket-chat-app
+    container_name: websocket-chat-app
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis:6379
+    volumes:
+      - ./websocket-chat-app/ssl:/app/ssl:ro
+      - ./websocket-chat-app/uploads:/app/uploads
+    networks:
+      - chat_network
+    expose:
+      - "443"
+      - "80"
+
+  # Question Chat Application (melihboyaci.online)
+  question-chat-app:
+    build: ./question-chat-app
+    container_name: question-chat-app
+    restart: unless-stopped
+    depends_on:
+      - redis
+    environment:
+      - REDIS_ADDR=redis:6379
+    volumes:
+      - ./websocket-chat-app/ssl:/app/ssl:ro  # Share SSL certificates
+    networks:
+      - chat_network
+    expose:
+      - "443"
+      - "80"
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./websocket-chat-app/ssl:/etc/nginx/ssl:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - websocket-chat-app
+      - question-chat-app
+    restart: unless-stopped
+    networks:
+      - chat_network
+
+volumes:
+  redis_data:
+
+networks:
+  chat_network:
+    driver: bridge

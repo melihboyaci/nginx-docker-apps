@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatliyo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #2c3e50;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            background: #ffffff;
+            margin: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            background: #ffffff;
+        }
+
+        .app-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .online-status {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #28a745;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Channels */
+        .channels {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .channel-category {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #6c757d;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .channel {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin: 2px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #495057;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .channel:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .channel.active {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .channel-icon {
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        .notification-badge {
+            background: #dc3545;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 18px;
+            height: 18px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+        }
+
+        .notification-badge.show {
+            display: flex;
+        }
+
+        /* User Panel */
+        .user-panel {
+            padding: 20px;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .channel-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .clear-history-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .clear-history-btn:hover {
+            background: #dc3545;
+            transform: translateY(-1px);
+        }
+
+        /* Messages */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
+            background: #fafbfc;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            opacity: 0;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            background: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .message-author {
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .message-timestamp {
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .message-text {
+            color: #495057;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .system-message .message-content {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+
+        /* Message Input */
+        .message-input-container {
+            padding: 20px 30px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .message-input-wrapper {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 25px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .message-input-wrapper:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .message-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: #495057;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .message-input::placeholder {
+            color: #6c757d;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:disabled {
+            background: #dee2e6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-form {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: #6c757d;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #495057;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .login-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Sound control styles */
+        .sound-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sound-selector {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            color: #495057;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sound-selector:hover {
+            border-color: #667eea;
+        }
+
+        .sound-test-btn {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sound-test-btn:hover {
+            background: #138496;
+        }
+
+        /* Scrollbar */
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: #dee2e6;
+            border-radius: 3px;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: #ced4da;
+        }
+
+        /* File upload styles */
+        .file-upload-area {
+            border: 2px dashed #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .file-upload-area.show {
+            display: block;
+        }
+
+        .file-upload-area:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .upload-button:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .file-message {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .file-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .file-icon {
+            font-size: 16px;
+        }
+
+        .file-download {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .file-download:hover {
+            text-decoration: underline;
+        }
+
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 8px 0;
+            display: none;
+        }
+
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            
+            .sidebar {
+                width: 240px;
+            }
+            
+            .messages {
+                padding: 15px 20px;
+            }
+            
+            .message-input-container {
+                padding: 15px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loginModal" class="login-modal">
+        <div class="login-form">
+            <h2 class="login-title">Chatliyo'e Katıl</h2>
+            <p class="login-subtitle">Kullanıcı adınızı girin ve sohbete başlayın</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Kullanıcı Adı</label>
+                    <input type="text" id="usernameInput" class="form-input" placeholder="Kullanıcı adınızı girin" required>
+                </div>
+                <button type="submit" class="login-button">Sohbete Katıl</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="app" id="app" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="app-title">Chatliyo</div>
+                <div class="online-status">
+                    <span class="status-dot"></span>
+                    Çevrimiçi
+                </div>
+            </div>
+            
+            <div class="channels">
+                <div class="channel-category">Metin Kanalları</div>
+                <div class="channel active" data-channel="genel">
+                    <span class="channel-icon">#</span>
+                    <span class="channel-name">genel</span>
+                    <span class="notification-badge" data-channel="genel">0</span>
+                </div>
+            </div>
+            
+            <div class="user-panel">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <div class="username" id="displayUsername">Kullanıcı</div>
+                        <div class="user-status">Çevrimiçi</div>
+                    </div>
+                </div>
+                <!-- Aktif kullanıcı sayacı kaldırıldı -->
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="channel-info">
+                    <span class="channel-icon">#</span>
+                    <span class="channel-name" id="currentChannelName">genel</span>
+                </div>
+                <div class="sound-controls">
+                    <button class="sound-toggle" id="soundToggle">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" id="soundIcon">
+                            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <span id="soundText">Sesli</span>
+                    </button>
+                    <select class="sound-selector" id="soundSelector">
+                        <option value="beep">Bip Sesi</option>
+                        <option value="ding">Ding Sesi</option>
+                        <option value="pop">Pop Sesi</option>
+                        <option value="chime">Çan Sesi</option>
+                    </select>
+                    <button class="sound-test-btn" id="soundTestBtn">Test</button>
+                    <button class="clear-history-btn" id="clearHistoryBtn">Geçmişi Temizle</button>
+                </div>
+            </div>
+            
+            <div class="messages" id="messages"></div>
+            
+            <!-- File upload area -->
+            <div class="file-upload-area" id="fileUploadArea">
+                <div>📁 Dosya yüklemek için tıklayın veya sürükleyip bırakın</div>
+                <div style="font-size: 12px; margin-top: 4px;">Maksimum 10MB (Resim, PDF, TXT, ZIP)</div>
+                <div class="upload-progress" id="uploadProgress">
+                    <div class="upload-progress-bar" id="uploadProgressBar"></div>
+                </div>
+            </div>
+            <input type="file" id="fileInput" class="file-input" accept="image/*,.pdf,.txt,.zip">
+            
+            <div class="message-input-container">
+                <div class="message-input-wrapper">
+                    <input type="text" class="message-input" id="messageInput" placeholder="#genel kanalına mesaj gönder">
+                    <button class="upload-button" id="uploadButton" title="Dosya Yükle">📎</button>
+                    <button class="send-button" id="sendButton">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        let username = '';
+        let currentChannel = 'genel';
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        
+        let unreadCounts = {
+            'genel': 0
+        };
+
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const app = document.getElementById('app');
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('usernameInput');
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+        const displayUsername = document.getElementById('displayUsername');
+        const userAvatar = document.getElementById('userAvatar');
+        const currentChannelName = document.getElementById('currentChannelName');
+        const channels = document.querySelectorAll('.channel');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+        // Login functionality
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            username = usernameInput.value.trim();
+            if (username) {
+                displayUsername.textContent = username;
+                userAvatar.textContent = username.charAt(0).toUpperCase();
+                loginModal.style.display = 'none';
+                app.style.display = 'flex';
+                
+                // Initialize audio after user interaction (required by browser policies)
+                initializeAudio();
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Hoş geldin!',
+                    text: `${username}, Chatliyo'e başarıyla katıldın`,
+                    timer: 2000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+                
+                connectWebSocket();
+            }
+        });
+
+        function connectWebSocket() {
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    console.log('WebSocket bağlantısı kuruldu');
+                    reconnectAttempts = 0;
+                    addSystemMessage(`${username} sohbete katıldı!`);
+                    
+                    // Load message history for current channel after connection
+                    setTimeout(() => {
+                        requestRecentMessages(currentChannel);
+                    }, 500);
+                };
+
+                ws.onmessage = (event) => {
+                    const lines = event.data.split('\n');
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const data = JSON.parse(line);
+                            
+                            // Handle user count updates
+                            if (data.type === 'user_count') {
+                                continue;
+                            }
+                            
+                            displayMessage(data);
+                        } catch (error) {
+                            console.error('Mesaj parse hatası:', error);
+                            displayMessage({
+                                username: 'Anonim',
+                                message: line,
+                                timestamp: new Date(),
+                                channel: currentChannel
+                            });
+                        }
+                    }
+                };
+
+                ws.onclose = (event) => {
+                    console.log('WebSocket bağlantısı kapandı', event);
+                    
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Bağlantı Koptu',
+                            text: `Yeniden bağlanılıyor... (${reconnectAttempts}/${maxReconnectAttempts})`,
+                            timer: 2000,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                        
+                        setTimeout(() => {
+                            connectWebSocket();
+                        }, 2000 * reconnectAttempts);
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Bağlantı Hatası',
+                            text: 'Sunucuya bağlanılamadı. Sayfa yenilenecek.',
+                            confirmButtonText: 'Tamam'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket hatası:', error);
+                };
+            } catch (error) {
+                console.error('WebSocket bağlantısı kurulamadı:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Bağlantı Hatası',
+                    text: 'Sunucuya bağlanılamadı. Lütfen daha sonra tekrar deneyin.',
+                    confirmButtonText: 'Tamam'
+                });
+            }
+        }
+
+        // Channel switching
+        channels.forEach(channel => {
+            channel.addEventListener('click', () => {
+                const previousChannel = currentChannel;
+                
+                channels.forEach(ch => ch.classList.remove('active'));
+                channel.classList.add('active');
+                
+                currentChannel = channel.dataset.channel;
+                currentChannelName.textContent = currentChannel;
+                messageInput.placeholder = `#${currentChannel} kanalına mesaj gönder`;
+                
+                clearNotifications(currentChannel);
+                
+                // Only clear and reload messages if switching to a different channel
+                if (previousChannel !== currentChannel) {
+                    messages.innerHTML = '';
+                    
+                    setTimeout(() => {
+                        requestRecentMessages(currentChannel);
+                    }, 100);
+                }
+            });
+        });
+
+        function requestRecentMessages(channelName) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const requestMessage = {
+                    username: username,
+                    message: `__GET_RECENT_MESSAGES__`,
+                    channel: channelName,
+                    timestamp: new Date()
+                };
+                
+                try {
+                    ws.send(JSON.stringify(requestMessage));
+                } catch (error) {
+                    console.error('Geçmiş mesajları isteme hatası:', error);
+                }
+            }
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message && ws && ws.readyState === WebSocket.OPEN) {
+                try {
+                    const messageData = {
+                        username: username,
+                        message: message,
+                        timestamp: new Date(),
+                        channel: currentChannel
+                    };
+                    
+                    ws.send(JSON.stringify(messageData));
+                    messageInput.value = '';
+                } catch (error) {
+                    console.error('Mesaj gönderme hatası:', error);
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Mesaj Gönderilemedi',
+                        text: 'Bağlantı kontrol ediliyor...',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                }
+            } else if (!ws || ws.readyState !== WebSocket.OPEN) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Bağlantı Kesildi',
+                    text: 'Yeniden bağlanmaya çalışılıyor...',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+                connectWebSocket();
+            }
+        }
+
+        // Enhanced Sound management with multiple sound types
+        let isSoundEnabled = true;
+        let audioContext;
+        let currentSoundType = 'beep';
+
+        // Sound storage
+        const soundTypes = {
+            beep: () => createBeepSound(),
+            ding: () => createDingSound(),
+            pop: () => createPopSound(),
+            chime: () => createChimeSound()
+        };
+
+        // Initialize audio context and load saved sound preference
+        function initializeAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Load saved sound preference
+                const savedSound = localStorage.getItem('soundType');
+                if (savedSound && soundTypes[savedSound]) {
+                    currentSoundType = savedSound;
+                    document.getElementById('soundSelector').value = savedSound;
+                }
+                
+                // Load saved sound enabled state
+                const savedSoundEnabled = localStorage.getItem('soundEnabled');
+                if (savedSoundEnabled !== null) {
+                    isSoundEnabled = savedSoundEnabled === 'true';
+                    updateSoundToggleUI();
+                }
+            } catch (error) {
+                console.log('Audio context not supported:', error);
+            }
+        }
+
+        // Create different sound types using Web Audio API
+        function createBeepSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function createDingSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.5);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.4, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function createPopSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+
+        function createChimeSound() {
+            if (!audioContext) return;
+            
+            // Create multiple oscillators for a richer chime sound
+            const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5
+            
+            frequencies.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                
+                const startTime = audioContext.currentTime + (index * 0.1);
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.8);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.8);
+            });
+        }
+
+        // Play notification sound
+        function playNotificationSound() {
+            if (!isSoundEnabled || !audioContext) return;
+            
+            try {
+                // Resume audio context if it's suspended (browser policy)
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                
+                const soundFunction = soundTypes[currentSoundType];
+                if (soundFunction) {
+                    soundFunction();
+                }
+            } catch (error) {
+                console.log('Error playing notification sound:', error);
+            }
+        }
+
+        // Update sound toggle UI
+        function updateSoundToggleUI() {
+            const soundToggle = document.getElementById('soundToggle');
+            const soundIcon = document.getElementById('soundIcon');
+            const soundText = document.getElementById('soundText');
+            
+            if (isSoundEnabled) {
+                soundToggle.classList.remove('muted');
+                soundText.textContent = 'Sesli';
+                soundIcon.innerHTML = `
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                `;
+            } else {
+                soundToggle.classList.add('muted');
+                soundText.textContent = 'Sessiz';
+                soundIcon.innerHTML = `
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                `;
+            }
+        }
+
+        // Sound control event listeners
+        const soundToggle = document.getElementById('soundToggle');
+        const soundSelector = document.getElementById('soundSelector');
+        const soundTestBtn = document.getElementById('soundTestBtn');
+
+        // Sound toggle functionality
+        soundToggle.addEventListener('click', () => {
+            isSoundEnabled = !isSoundEnabled;
+            localStorage.setItem('soundEnabled', isSoundEnabled.toString());
+            updateSoundToggleUI();
+            
+            if (isSoundEnabled) {
+                // Initialize audio on first enable
+                if (!audioContext) {
+                    initializeAudio();
+                }
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Ses Açıldı',
+                    text: 'Bildirim sesleri aktif',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Ses Kapatıldı',
+                    text: 'Bildirim sesleri kapalı',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+        });
+
+        // Sound selector change
+        soundSelector.addEventListener('change', (e) => {
+            currentSoundType = e.target.value;
+            localStorage.setItem('soundType', currentSoundType);
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Ses Değiştirildi',
+                text: `Yeni ses: ${e.target.options[e.target.selectedIndex].text}`,
+                timer: 1500,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        });
+
+        // Sound test button
+        soundTestBtn.addEventListener('click', () => {
+            if (!audioContext) {
+                initializeAudio();
+            }
+            
+            if (isSoundEnabled) {
+                playNotificationSound();
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Ses Kapalı',
+                    text: 'Ses testini duymak için sesi açın',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }
+        });
+
+        // File upload functionality
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+
+        // File upload button click
+        uploadButton.addEventListener('click', () => {
+            if (!fileUploadArea.classList.contains('show')) {
+                fileUploadArea.classList.add('show');
+            } else {
+                fileInput.click();
+            }
+        });
+
+        // File upload area click
+        fileUploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadFile(e.target.files[0]);
+            }
+        });
+
+        // Drag and drop functionality
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            
+            if (e.dataTransfer.files.length > 0) {
+                uploadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Upload file function
+        function uploadFile(file) {
+            // Validate file size
+            if (file.size > 10 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Dosya Çok Büyük',
+                    text: 'Maksimum dosya boyutu 10MB olmalıdır.',
+                    confirmButtonText: 'Tamam'
+                });
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('username', username);
+            formData.append('channel', currentChannel);
+
+            // Show progress
+            uploadProgress.style.display = 'block';
+            uploadProgressBar.style.width = '0%';
+
+            // Upload file
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    uploadProgressBar.style.width = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                uploadProgress.style.display = 'none';
+                fileUploadArea.classList.remove('show');
+                fileInput.value = '';
+
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Dosya Yüklendi',
+                        text: 'Dosya başarıyla paylaşıldı!',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Yükleme Hatası',
+                        text: 'Dosya yüklenirken bir hata oluştu.',
+                        confirmButtonText: 'Tamam'
+                    });
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                uploadProgress.style.display = 'none';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Bağlantı Hatası',
+                    text: 'Dosya yüklenirken bağlantı hatası oluştu.',
+                    confirmButtonText: 'Tamam'
+                });
+            });
+
+            xhr.open('POST', '/upload');
+            xhr.send(formData);
+        }
+
+        // Enhanced displayMessage function to handle file messages
+        function displayMessage(data) {
+            if (data.message === "__GET_RECENT_MESSAGES__") {
+                return;
+            }
+            
+            // Only display messages for current channel or system messages
+            if (!data.channel || data.channel === currentChannel) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message';
+
+                const timestamp = new Date(data.timestamp);
+                const timeString = timestamp.toLocaleTimeString('tr-TR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+
+                let messageContent = '';
+                
+                if (data.type === 'file' || data.type === 'image') {
+                    let fileContent = '';
+                    
+                    if (data.type === 'image') {
+                        fileContent = `
+                            <div class="file-message">
+                                <img src="${data.fileUrl}" alt="${data.fileName}" class="file-preview" onclick="window.open('${data.fileUrl}', '_blank')">
+                                <div class="file-info">
+                                    <span class="file-icon">🖼️</span>
+                                    <a href="${data.fileUrl}" target="_blank" class="file-download">${data.fileName}</a>
+                                    <span>(${formatFileSize(data.fileSize)})</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        const fileIcon = getFileIcon(data.fileName);
+                        fileContent = `
+                            <div class="file-message">
+                                <div class="file-info">
+                                    <span class="file-icon">${fileIcon}</span>
+                                    <a href="${data.fileUrl}" target="_blank" class="file-download">${data.fileName}</a>
+                                    <span>(${formatFileSize(data.fileSize)})</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    messageContent = `
+                        <div class="message-avatar">${data.username.charAt(0).toUpperCase()}</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">${data.username}</span>
+                                <span class="message-timestamp">${timeString}</span>
+                            </div>
+                            <div class="message-text">${escapeHtml(data.message)}</div>
+                            ${fileContent}
+                        </div>
+                    `;
+                } else {
+                    messageContent = `
+                        <div class="message-avatar">${data.username.charAt(0).toUpperCase()}</div>
+                        <div class="message-content">
+                            <div class="message-header">
+                                <span class="message-author">${data.username}</span>
+                                <span class="message-timestamp">${timeString}</span>
+                            </div>
+                            <div class="message-text">${escapeHtml(data.message)}</div>
+                        </div>
+                    `;
+                }
+
+                messageElement.innerHTML = messageContent;
+                messages.appendChild(messageElement);
+                messages.scrollTop = messages.scrollHeight;
+                
+                // Play notification sound for messages from other users in current channel
+                if (data.username !== username && data.username !== 'Sistem') {
+                    playNotificationSound();
+                }
+            } else if (data.channel && data.channel !== currentChannel) {
+                // Add notification for messages in other channels
+                if (data.username !== username) {
+                    addNotification(data.channel);
+                    // Play notification sound for messages from other users in other channels
+                    playNotificationSound();
+                }
+            }
+        }
+
+        function addSystemMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message system-message';
+            messageElement.innerHTML = `
+                <div class="message-avatar">!</div>
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="message-author">Sistem</span>
+                        <span class="message-timestamp">${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div class="message-text">${message}</div>
+                </div>
+            `;
+            messages.appendChild(messageElement);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function addNotification(channelName) {
+            if (unreadCounts[channelName] !== undefined) {
+                unreadCounts[channelName]++;
+                updateNotificationDisplay(channelName);
+            }
+        }
+
+        function clearNotifications(channelName) {
+            if (unreadCounts[channelName] !== undefined) {
+                unreadCounts[channelName] = 0;
+                updateNotificationDisplay(channelName);
+            }
+        }
+
+        function updateNotificationDisplay(channelName) {
+            const channel = document.querySelector(`[data-channel="${channelName}"]`);
+            const badge = channel.querySelector('.notification-badge');
+            const count = unreadCounts[channelName];
+
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count.toString();
+                badge.classList.add('show');
+                channel.classList.add('has-notifications');
+            } else {
+                badge.classList.remove('show');
+                channel.classList.remove('has-notifications');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        clearHistoryBtn.addEventListener('click', () => {
+            Swal.fire({
+                title: 'Geçmişi Temizle',
+                text: `#${currentChannel} kanalının geçmişini temizlemek istediğinize emin misiniz?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Evet, Temizle',
+                cancelButtonText: 'İptal',
+                confirmButtonColor: '#dc3545'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch('/clear-history', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ channel: currentChannel })
+                    })
+                    .then(res => {
+                        if (res.ok) {
+                            messages.innerHTML = '';
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Başarılı!',
+                                text: 'Geçmiş mesajlar temizlendi.',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Hata!',
+                                text: 'Geçmiş temizlenemedi.',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Hata!',
+                            text: 'Sunucu hatası.',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                    });
+                }
+            });
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        usernameInput.focus();
+
+        function updateActiveUserCount(count) {
+            activeUsersCount.textContent = count;
+            
+            // Update text based on count
+            const activeUsersElement = document.querySelector('.active-users span:last-child');
+            if (count === 1) {
+                activeUsersElement.textContent = 'aktif kullanıcı';
+            } else {
+                activeUsersElement.textContent = 'aktif kullanıcı';
+            }
+        }
+    </script>
+</body>
+</html>

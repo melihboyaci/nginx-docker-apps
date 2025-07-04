@@ -1,0 +1,17 @@
+# Binaries
+chat-server
+chat-server.exe
+
+# Go specific
+*.log
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+
