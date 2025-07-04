@@ -23,6 +23,7 @@ services:
       - redis
     environment:
       - REDIS_ADDR=redis:6379
+      - APP_NAME=websocket-chat-app
     volumes:
       - ./ssl:/app/ssl:ro
       - ./uploads:/app/uploads
@@ -41,6 +42,7 @@ services:
       - redis
     environment:
       - REDIS_ADDR=redis:6379
+      - APP_NAME=question-chat-app
     volumes:
       - ./ssl:/app/ssl:ro
       - ./uploads:/app/uploads

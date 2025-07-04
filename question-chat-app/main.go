@@ -74,7 +74,7 @@ func newHub() *Hub {
 		log.Println("Redis olmadan devam ediliyor...")
 		rdb = nil
 	} else {
-		log.Println("Redis bağlantısı başarılı")
+		log.Println("Redis bağlantısı başarılı - question-chat-app")
 	}
 
 	return &Hub{
@@ -100,7 +100,8 @@ func (h *Hub) storeMessage(msg Message) {
 	}
 
 	// Store message in a list for the channel (keep last 100 messages)
-	key := fmt.Sprintf("messages:%s", msg.Channel)
+	// Use "question:" prefix to separate from websocket-chat-app
+	key := fmt.Sprintf("question:messages:%s", msg.Channel)
 	pipe := h.redis.Pipeline()
 	pipe.LPush(ctx, key, messageJSON)
 	pipe.LTrim(ctx, key, 0, 99)         // Keep only the last 100 messages
@@ -119,7 +120,8 @@ func (h *Hub) getRecentMessages(channel string, limit int) ([]Message, error) {
 	}
 
 	ctx := context.Background()
-	key := fmt.Sprintf("messages:%s", channel)
+	// Use "question:" prefix to separate from websocket-chat-app
+	key := fmt.Sprintf("question:messages:%s", channel)
 
 	// Get messages (they're stored in reverse order, so we get from the end)
 	results, err := h.redis.LRange(ctx, key, 0, int64(limit-1)).Result()
@@ -392,7 +394,8 @@ func (h *Hub) clearChannelHistory(channel string) error {
 		return nil
 	}
 	ctx := context.Background()
-	key := fmt.Sprintf("messages:%s", channel)
+	// Use "question:" prefix to separate from websocket-chat-app
+	key := fmt.Sprintf("question:messages:%s", channel)
 	err := h.redis.Del(ctx, key).Err()
 	if err != nil {
 		log.Printf("Kanal geçmişi temizleme hatası: %v", err)
