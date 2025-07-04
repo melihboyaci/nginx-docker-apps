@@ -1197,19 +1197,92 @@
             }
         });
 
-        // Upload file function
+        // Helper functions for file handling
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileIcon(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const icons = {
+                'pdf': '📄',
+                'doc': '📝',
+                'docx': '📝',
+                'xls': '📊',
+                'xlsx': '📊',
+                'txt': '📃',
+                'zip': '📦',
+                'rar': '📦',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️',
+                'bmp': '🖼️',
+                'webp': '🖼️'
+            };
+            return icons[ext] || '📎';
+        }
+
+        // Enhanced upload file function with better error handling
         function uploadFile(file) {
-            // Validate file size
-            if (file.size > 10 * 1024 * 1024) {
+            // Enhanced file validation
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            const allowedTypes = [
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+                'text/plain', 'application/pdf', 'application/zip', 
+                'application/x-zip-compressed', 'application/rar',
+                'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            ];
+
+            // File size validation
+            if (file.size > maxSize) {
                 Swal.fire({
                     icon: 'error',
                     title: 'Dosya Çok Büyük',
-                    text: 'Maksimum dosya boyutu 10MB olmalıdır.',
+                    text: `Maksimum dosya boyutu ${formatFileSize(maxSize)} olmalıdır. Seçilen dosya: ${formatFileSize(file.size)}`,
                     confirmButtonText: 'Tamam'
                 });
                 return;
             }
 
+            // File type validation
+            if (!allowedTypes.includes(file.type) && file.type !== '') {
+                // Check by extension if MIME type is not available
+                const ext = file.name.split('.').pop().toLowerCase();
+                const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'pdf', 'txt', 'zip', 'rar', 'doc', 'docx', 'xls', 'xlsx'];
+                
+                if (!validExtensions.includes(ext)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Desteklenmeyen Dosya Türü',
+                        text: 'Sadece resim, PDF, metin, ZIP ve Office dosyaları yükleyebilirsiniz.',
+                        confirmButtonText: 'Tamam'
+                    });
+                    return;
+                }
+            }
+
+            // Show upload confirmation
+            Swal.fire({
+                title: 'Dosya Yükle',
+                text: `"${file.name}" dosyasını yüklemek istediğinize emin misiniz?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Evet, Yükle',
+                cancelButtonText: 'İptal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performFileUpload(file);
+                }
+            });
+        }
+
+        function performFileUpload(file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('username', username);
@@ -1218,6 +1291,10 @@
             // Show progress
             uploadProgress.style.display = 'block';
             uploadProgressBar.style.width = '0%';
+            
+            // Disable upload button during upload
+            uploadButton.disabled = true;
+            uploadButton.textContent = '⏳';
 
             // Upload file
             const xhr = new XMLHttpRequest();
@@ -1233,23 +1310,31 @@
                 uploadProgress.style.display = 'none';
                 fileUploadArea.classList.remove('show');
                 fileInput.value = '';
+                uploadButton.disabled = false;
+                uploadButton.textContent = '📎';
 
                 if (xhr.status === 200) {
-                    const response = JSON.parse(xhr.responseText);
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Dosya Yüklendi',
-                        text: 'Dosya başarıyla paylaşıldı!',
-                        timer: 2000,
-                        showConfirmButton: false,
-                        toast: true,
-                        position: 'top-end'
-                    });
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Dosya Yüklendi',
+                            text: `"${response.fileName}" başarıyla paylaşıldı! (${formatFileSize(response.fileSize)})`,
+                            timer: 3000,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                        
+                        console.log('Dosya sunucuda kaydedildi:', response.filePath);
+                    } catch (e) {
+                        console.error('Response parse hatası:', e);
+                    }
                 } else {
                     Swal.fire({
                         icon: 'error',
                         title: 'Yükleme Hatası',
-                        text: 'Dosya yüklenirken bir hata oluştu.',
+                        text: `Dosya yüklenirken bir hata oluştu. (${xhr.status})`,
                         confirmButtonText: 'Tamam'
                     });
                 }
@@ -1257,6 +1342,9 @@
 
             xhr.addEventListener('error', () => {
                 uploadProgress.style.display = 'none';
+                uploadButton.disabled = false;
+                uploadButton.textContent = '📎';
+                
                 Swal.fire({
                     icon: 'error',
                     title: 'Bağlantı Hatası',
