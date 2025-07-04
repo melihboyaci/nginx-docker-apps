@@ -43,6 +43,7 @@ services:
       - REDIS_ADDR=redis:6379
     volumes:
       - ./ssl:/app/ssl:ro
+      - ./uploads:/app/uploads
     networks:
       - chat_network
     expose:
@@ -60,6 +61,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./ssl:/etc/nginx/ssl:ro
       - ./nginx/logs:/var/log/nginx
+      - ./uploads:/var/www/uploads
     depends_on:
       - websocket-chat-app
       - question-chat-app
